@@ -73,11 +73,6 @@ for epoch in range(1, n_epochs+1):
         optimizer.zero_grad()
         loss.backward()
 
-        for name, param in model.named_parameters():
-            print(name)
-            print(param.grad)
-            print('='*100)
-            input()
         optimizer.step()
 
     train_loss /= len(train_loader.dataset)
