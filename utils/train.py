@@ -69,4 +69,4 @@ def training(model, train_loader, test_loader, n_epochs, lr, batch_size, device,
             'test_loss': test_loss_list, 'test_acc': test_acc_list,
         }
 
-        return hist
+    return hist

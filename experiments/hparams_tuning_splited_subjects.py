@@ -7,7 +7,7 @@ import optuna
 import numpy as np
 from pathlib import Path
 
-from pamap2.utils import PAMAP2
+from pamap2.utils import PAMAP2, persons
 from utils.train import training
 
 from models.sample import SimpleCNN
@@ -20,22 +20,49 @@ print('Device: {}'.format(device))
 # Hyper Parameters
 n_classes = 5
 batch_size = 256
-n_epochs = 200
+n_epochs = 300
 frame_size = 256
 activities = [1, 2, 3, 4, 5]
 attributes = ['acc1']
 positions = ['chest']
+axes = ['x', 'y', 'z']
 
 # dataset
 print('[Dataset]')
 pamap2 = PAMAP2('D:/datasets/PAMAP2/PAMAP2_Dataset/Protocol/', cache_dir='data_cache/org/')
-ret = pamap2.framing(frame_size, None, activities, attributes, positions, axes)
-frames, act_labels, sub_labels, cid2act, pid2name = ret
-frames = np.transpose(frames, [0, 2, 1])
-p = np.random.permutation(len(frames))
-n_train = int(len(frames) * 0.5)
-x_train, x_test = frames[p][:n_train], frames[p][n_train:]
-y_train, y_test = act_labels[p][:n_train], act_labels[p][n_train:]
+
+all_persons = np.array(persons)
+n_train_persons = len(all_persons)//2
+n_test_persons = len(all_persons) - n_train_persons
+p = np.random.permutation(len(all_persons))
+train_persons = all_persons[p][:n_train_persons]
+test_persons = all_persons[p][n_train_persons:]
+
+ret = pamap2.framing(frame_size, train_persons, activities, attributes, positions, axes)
+x_train, y_train, sub_labels, cid2act, pid2name = ret
+x_train = np.transpose(x_train, [0, 2, 1])
+print(cid2act)
+flg = False
+for lid in range(len(activities)):
+    if lid not in y_train:
+        flg = True 
+        print(' >>> [Warning] Activity(label id {}) not found in train dataset'.format(lid))
+if flg:
+    raise RuntimeError('Activity classes are not enough.')
+
+ret = pamap2.framing(frame_size, test_persons, activities, attributes, positions, axes)
+x_test, y_test, sub_labels, cid2act, pid2name = ret
+x_test= np.transpose(x_test, [0, 2, 1])
+print(cid2act)
+flg = False
+for lid in range(len(activities)):
+    if lid not in y_train:
+        flg = True 
+        print(' >>> [Warning] Activity(label id {}) not found in train dataset'.format(lid))
+if flg:
+    raise RuntimeError('Activity classes are not enough.')
+
+
 train_ds = torch.utils.data.TensorDataset(torch.tensor(x_train, dtype=torch.float), torch.tensor(y_train, dtype=torch.long))
 test_ds = torch.utils.data.TensorDataset(torch.tensor(x_test, dtype=torch.float), torch.tensor(y_test, dtype=torch.long))
 train_loader = torch.utils.data.DataLoader(train_ds, batch_size=batch_size, shuffle=True)
@@ -48,7 +75,7 @@ print('y_test: {}'.format(y_test.shape))
 
 
 model_list = {
-    'simplecnn': SimpleCNN,
+    'simplecnn': (SimpleCNN, {'in_shape': x_train.shape[1:], 'n_classes': n_classes}),
     'vgg11': vgg11, 'vgg16': vgg16, 'vgg19': vgg19,
     'resnet18': resnet18, 'resnet34': resnet34, 'resnet50': resnet50, 'resnet101': resnet101,
 }
@@ -58,16 +85,20 @@ for model_name in model_list:
     print('='*100)
     print('[{}]'.format(model_name))
     model = model_list[model_name]
+    if type(model) is tuple:
+        model, args = model
+    else:
+        args = {'in_channels' :3, 'num_classes': n_classes}
 
     def get_lr(trial):
         lr = trial.suggest_loguniform('adam_lr', 1e-6, 1e-4)
         return lr
 
     def objective(trial):
-        model = vgg11(in_channels=3, classes=n_classes)
+        net = model(**args).to(device)
         lr = get_lr(trial)
 
-        hist = training(model, train_loader, test_loader, n_epochs, lr, batch_size, device, best_param_name=None)
+        hist = training(net, train_loader, test_loader, n_epochs, lr, batch_size, device, best_param_name=None)
 
         test_acc = np.array(hist['test_acc'])
 
