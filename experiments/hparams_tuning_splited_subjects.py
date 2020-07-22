@@ -46,9 +46,9 @@ flg = False
 for lid in range(len(activities)):
     if lid not in y_train:
         flg = True 
-        print(' >>> [Warning] Activity(label id {}) not found in train dataset'.format(lid))
+        print(' >>> [Warning] Subjects(label id {}) not found in train dataset'.format(lid))
 if flg:
-    raise RuntimeError('Activity classes are not enough.')
+    raise RuntimeError('Subject are not enough.')
 
 ret = pamap2.framing(frame_size, test_persons, activities, attributes, positions, axes)
 x_test, y_test, sub_labels, cid2act, pid2name = ret
@@ -58,9 +58,9 @@ flg = False
 for lid in range(len(activities)):
     if lid not in y_train:
         flg = True 
-        print(' >>> [Warning] Activity(label id {}) not found in train dataset'.format(lid))
+        print(' >>> [Warning] Subjects(label id {}) not found in train dataset'.format(lid))
 if flg:
-    raise RuntimeError('Activity classes are not enough.')
+    raise RuntimeError('Subject are not enough.')
 
 
 train_ds = torch.utils.data.TensorDataset(torch.tensor(x_train, dtype=torch.float), torch.tensor(y_train, dtype=torch.long))
