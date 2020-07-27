@@ -15,6 +15,8 @@ from models.sample import SimpleCNN
 from models.vgg import *
 from models.resnet import *
 
+np.random.seed(seed=42)
+
 def get_dataset(pamap2, l_fpass, frame_size, activities, attributes, positions, axes):
     fs = 100
     low_pass_filter_fn = lambda x: lpf(x, l_fpass, fs)
@@ -22,10 +24,10 @@ def get_dataset(pamap2, l_fpass, frame_size, activities, attributes, positions, 
     ret = pamap2.framing(frame_size, None, activities, attributes, positions, axes, preprocesses=[low_pass_filter_fn])
     frames, act_labels, sub_labels, cid2act, pid2name = ret
     frames = np.transpose(frames, [0, 2, 1])
-    # p = np.random.permutation(len(frames))
-    # n_train = int(len(frames) * 0.5)
-    # x_train, x_test = frames[p][:n_train], frames[p][n_train:]
-    # y_train, y_test = sub_labels[p][:n_train], sub_labels[p][n_train:]
+    p = np.random.permutation(len(frames))
+    n_train = int(len(frames) * 0.5)
+    x_train, x_test = frames[p][:n_train], frames[p][n_train:]
+    y_train, y_test = sub_labels[p][:n_train], sub_labels[p][n_train:]
     n_train = int(len(frames) * 0.5)
     x_train, x_test = frames[:n_train], frames[n_train:]
     y_train, y_test = sub_labels[:n_train], sub_labels[n_train:]
