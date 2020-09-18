@@ -20,9 +20,12 @@ def get_dataset(train_persons, test_persons, frame_size, activities, attributes,
     ret = pamap2.framing(frame_size, train_persons, activities, attributes, positions, axes, preprocesses=preprocesses)
     x_train, y_train, sub_labels, cid2act, pid2name = ret
     x_train = np.transpose(x_train, [0, 2, 1])
+    print('[Train Dataset]')
     print(cid2act)
     flg = False
     for lid in range(len(activities)):
+        act = cid2act[lid]
+        print('{}({}): {}'.format(act, lid, np.sum(y_train == lid)))
         if lid not in y_train:
             flg = True 
             print(' >>> [Warning] Activity(label id {}) not found in train dataset'.format(lid))
@@ -32,9 +35,12 @@ def get_dataset(train_persons, test_persons, frame_size, activities, attributes,
     ret = pamap2.framing(frame_size, test_persons, activities, attributes, positions, axes, preprocesses=preprocesses)
     x_test, y_test, sub_labels, cid2act, pid2name = ret
     x_test= np.transpose(x_test, [0, 2, 1])
+    print('[Test Dataset]')
     print(cid2act)
     flg = False
     for lid in range(len(activities)):
+        act = cid2act[lid]
+        print('{}({}): {}'.format(act, lid, np.sum(y_test == lid)))
         if lid not in y_train:
             flg = True 
             print(' >>> [Warning] Activity(label id {}) not found in train dataset'.format(lid))
